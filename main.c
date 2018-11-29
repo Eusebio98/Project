@@ -4,20 +4,20 @@
 #include <dirent.h>
 #include <string.h>
 
-//definizione nodo lista
+//definition node list
 typedef struct struct_list {
     char *file_path;
     struct struct_list *next;
 } ListNode;
 
-typedef ListNode* List; //definizione lista
+typedef ListNode* List; //definition list
 
 List list;
 
-//dichiarazione di funzioni
+//declaration of functions
 void MakeNullList (List *lis);
-void InserisciCodaLista(List *lis, char *elem);
-void VisitaLista(List lis);
+void InserTailList(List *lis, char *elem);
+void VisitList(List lis);
 void ls_directory(List *lis, char *arg);
 
 
@@ -25,32 +25,32 @@ int main(int argc, char **argv) {
     
     MakeNullList(&list);
     ls_directory(&list,argv[1]);
-    VisitaLista(list);
+    VisitList(list);
 
     exit(EXIT_SUCCESS);
     
 }
 
 
-//funzione che inizializza una lista
+//function that initializes a list
 void MakeNullList (List *lis) {
     *lis = NULL;
 }
 
-//funzione che inserisce una stringa in una lista
-void InserisciCodaLista(List *lis, char *elem){
+//function that queues a string in a list
+void InserTailList(List *lis, char *elem){
     
     if (*lis == NULL) {
         *lis = (List)malloc((strlen(elem)+1)*sizeof(char));
         (*lis)->file_path = elem;
         (*lis)->next = NULL;
     } else
-        InserisciCodaLista(&(*lis)->next, elem);
+        InserTailList(&(*lis)->next, elem);
     
 }
 
-//funzione che stampa una lista di stringhe
-void VisitaLista(List lis) {
+//function that prints a list of strings
+void VisitList(List lis) {
     
     printf("\n");
     while (lis != NULL) {
@@ -61,7 +61,7 @@ void VisitaLista(List lis) {
     
 }
 
-//funzione che inserisce in una lista i file contenuti in una directory
+//function that inserts the files contained in a directory into a list
 void ls_directory(List *lis, char *arg) {
     
     struct dirent *de;  // Pointer for directory entry
@@ -75,7 +75,7 @@ void ls_directory(List *lis, char *arg) {
     
     // for readdir()
     while ((de = readdir(dr)) != NULL)
-        InserisciCodaLista(lis, de->d_name);
+        InserTailList(lis, de->d_name);
     
     closedir(dr);
     
