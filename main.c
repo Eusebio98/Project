@@ -19,13 +19,17 @@ void MakeNullList (List *lis);
 void InserTailList(List *lis, char *elem);
 void VisitList(List lis);
 void ls_directory(List *lis, char *arg);
-
+void number_of_core();
 
 int main(int argc, char **argv) {
+    
+    int const n_max_thread = number_of_core();
     
     MakeNullList(&list);
     ls_directory(&list,argv[1]);
     VisitList(list);
+    
+    number_of_core();
 
     exit(EXIT_SUCCESS);
     
@@ -78,5 +82,19 @@ void ls_directory(List *lis, char *arg) {
         InserTailList(lis, de->d_name);
     
     closedir(dr);
+    
+}
+
+void number_of_core() {
+
+   FILE *cpuinfo = fopen("/proc/cpuinfo", "rb");
+   char *arg = 0;
+   size_t size = 0;
+    
+   while(getdelim(&arg, &size, 0, cpuinfo) != -1)
+      puts(arg);
+ 
+   free(arg);
+   fclose(cpuinfo);
     
 }
