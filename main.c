@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <dirent.h>
 #include <string.h>
+#include <unistd.h>
 
 //definition node list
 typedef struct struct_list {
@@ -19,18 +20,19 @@ void MakeNullList (List *lis);
 void InserTailList(List *lis, char *elem);
 void VisitList(List lis);
 void ls_directory(List *lis, char *arg);
-void number_of_core();
+int number_of_core();
+
 
 int main(int argc, char **argv) {
     
-    int const n_max_thread = number_of_core();
+    int const n_core = number_of_core();
     
     MakeNullList(&list);
     ls_directory(&list,argv[1]);
     VisitList(list);
     
-    number_of_core();
-
+    printf("\nIl numero di core della CPU e' %d\n", n_core);
+    
     exit(EXIT_SUCCESS);
     
 }
@@ -68,6 +70,8 @@ void VisitList(List lis) {
 //function that inserts the files contained in a directory into a list
 void ls_directory(List *lis, char *arg) {
     
+    char *str;
+    
     struct dirent *de;  // Pointer for directory entry
     DIR *dr = opendir(arg); // opendir() returns a pointer of DIR type.
     
@@ -78,23 +82,50 @@ void ls_directory(List *lis, char *arg) {
     }
     
     // for readdir()
-    while ((de = readdir(dr)) != NULL)
-        InserTailList(lis, de->d_name);
+    while ((de = readdir(dr)) != NULL) {
+        
+        // concatenate the path of the folder passed as an argument with the files inside it
+        str = (char *)malloc((strlen(arg)+strlen(de->d_name)+2)*sizeof(char));
+        strcat(str, arg);
+        strcat(str, "/");
+        strcat(str, de->d_name);
+        InserTailList(lis, str);
+        str=NULL;
+        free(str);
+        
+    }
     
     closedir(dr);
     
 }
 
-void number_of_core() {
-
-   FILE *cpuinfo = fopen("/proc/cpuinfo", "rb");
-   char *arg = 0;
-   size_t size = 0;
+// function that returns the number of CPU cores
+int number_of_core() {
     
-   while(getdelim(&arg, &size, 0, cpuinfo) != -1)
-      puts(arg);
- 
-   free(arg);
-   fclose(cpuinfo);
+    char str[32]; // string that allows to search for the "cpu cores" field
+    int numbers_core=0; // number of core
+    
+    FILE *f=NULL;
+    f=fopen("/proc/cpuinfo", "rb");
+    
+    if(f==NULL) {
+        printf("\nIl file /proc/cpuinfo non e' stato aperto correttamente\n");
+        exit(EXIT_FAILURE);
+    }
+    
+    while(fscanf(f, "%s", str)==1) {
+        // searching for the string "cpu"
+        if(strcmp(str,"cpu")==0){
+            fscanf(f, "%s", str);
+            // searching for the string "cores"
+            if(strcmp(str,"cores")==0) {
+                fscanf(f, "%s", str); // string that contains ":"
+                fscanf(f, "%d", &numbers_core); //now numbers_core contains the number of the core
+                return numbers_core;
+            }
+        }
+    }
+    
+    return 0;
     
 }
