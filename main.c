@@ -16,7 +16,7 @@ typedef ListNode* List; //definition list
 List list;
 
 //declaration of functions
-void MakeNullList (List *lis);
+void MakeNullList(List *lis);
 void InserTailList(List *lis, char *elem);
 void VisitList(List lis);
 void ls_directory(List *lis, char *arg);
@@ -77,7 +77,7 @@ void ls_directory(List *lis, char *arg) {
     
     // opendir returns NULL if couldn't open directory
     if (dr == NULL) {
-        printf("Could not open current directory" );
+        printf("Could not open current directory\n");
         exit(EXIT_FAILURE);
     }
     
@@ -109,7 +109,7 @@ int number_of_core() {
     f=fopen("/proc/cpuinfo", "rb");
     
     if(f==NULL) {
-        printf("\nIl file /proc/cpuinfo non e' stato aperto correttamente\n");
+        printf("\nThe /proc/cpuinfo file was not opened correctly\n");
         exit(EXIT_FAILURE);
     }
     
