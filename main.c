@@ -121,6 +121,7 @@ int number_of_core() {
             if(strcmp(str,"cores")==0) {
                 fscanf(f, "%s", str); // string that contains ":"
                 fscanf(f, "%d", &numbers_core); //now numbers_core contains the number of the core
+                fclose(f);
                 return numbers_core;
             }
         }
