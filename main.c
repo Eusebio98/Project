@@ -39,7 +39,7 @@ int main(int argc, char **argv) {
 
 
 //function that initializes a list
-void MakeNullList (List *lis) {
+void MakeNullList(List *lis) {
     *lis = NULL;
 }
 
