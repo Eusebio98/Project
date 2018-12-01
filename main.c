@@ -45,7 +45,7 @@ void MakeNullList() {
 //function that queues a string in a list
 void InserTailList(char *elem) { 
 
-    List paux, ultimo; 
+    List paux, last; 
     paux = (List)malloc(sizeof((strlen(elem)+1)*sizeof(char))); 
     if (paux==NULL) 
         exit(EXIT_FAILURE); 
@@ -54,10 +54,10 @@ void InserTailList(char *elem) {
     if (list == NULL)
         list = paux;
     else { 
-        ultimo = list; 
-        while (ultimo->next != NULL)  
-            ultimo = ultimo->next; 
-        ultimo->next = paux; 
+        last = list; 
+        while (last->next != NULL)  
+            last = last->next; 
+        last->next = paux; 
     }
 
 } 
