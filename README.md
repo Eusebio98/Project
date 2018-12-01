@@ -1,4 +1,4 @@
-# Project
+# ProjectSO
 Project Operating System 2018 - 2019
 
 Step 1.
