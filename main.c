@@ -16,20 +16,19 @@ typedef ListNode* List; //definition list
 List list;
 
 //declaration of functions
-void MakeNullList(List *lis);
-void InserTailList(List *lis, char *elem);
-void VisitList(List lis);
-void ls_directory(List *lis, char *arg);
+void MakeNullList();
+void InserTailList(char *elem);
+void VisitList();
+void ls_directory(char *arg);
 int number_of_core();
-
 
 int main(int argc, char **argv) {
     
-    int const n_core = number_of_core();
+    const int n_core = number_of_core();
     
-    MakeNullList(&list);
-    ls_directory(&list,argv[1]);
-    VisitList(list);
+    MakeNullList();
+    ls_directory(argv[1]);
+    VisitList();
     
     printf("\nIl numero di core della CPU e' %d\n", n_core);
     
@@ -39,25 +38,35 @@ int main(int argc, char **argv) {
 
 
 //function that initializes a list
-void MakeNullList(List *lis) {
-    *lis = NULL;
+void MakeNullList() {
+    list = NULL;
 }
 
 //function that queues a string in a list
-void InserTailList(List *lis, char *elem){
-    
-    if (*lis == NULL) {
-        *lis = (List)malloc((strlen(elem)+1)*sizeof(char));
-        (*lis)->file_path = elem;
-        (*lis)->next = NULL;
-    } else
-        InserTailList(&(*lis)->next, elem);
-    
-}
+void InserTailList(char *elem) { 
+
+    List paux, ultimo; 
+    paux = (List)malloc(sizeof((strlen(elem)+1)*sizeof(char))); 
+    if (paux==NULL) 
+        exit(EXIT_FAILURE); 
+    paux->file_path = elem; 
+    paux->next = NULL; 
+    if (list == NULL)
+        list = paux;
+    else { 
+        ultimo = list; 
+        while (ultimo->next != NULL)  
+            ultimo = ultimo->next; 
+        ultimo->next = paux; 
+    }
+
+} 
+
 
 //function that prints a list of strings
-void VisitList(List lis) {
+void VisitList() {
     
+    List lis=list;
     printf("\n");
     while (lis != NULL) {
         printf("%s\n", lis->file_path);
@@ -68,7 +77,7 @@ void VisitList(List lis) {
 }
 
 //function that inserts the files contained in a directory into a list
-void ls_directory(List *lis, char *arg) {
+void ls_directory(char *arg) {
     
     char *str;
     
@@ -89,7 +98,7 @@ void ls_directory(List *lis, char *arg) {
         strcat(str, arg);
         strcat(str, "/");
         strcat(str, de->d_name);
-        InserTailList(lis, str);
+	InserTailList(str);
         str=NULL;
         free(str);
         
