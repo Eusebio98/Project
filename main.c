@@ -6,66 +6,99 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <pthread.h>
 
 
-//definition node list
+// definition node list
 typedef struct struct_list {
     char *file_path;
     struct struct_list *next;
     int is_directory;
 } ListNode;
 
-typedef ListNode* List; //definition list
+typedef ListNode* List; // definition list
 
 List list;
+int current_number_of_thread=0;
+pthread_mutex_t work_mutex; // the mutex protects the list and the variable current_number_of_thread
 
-//declaration of functions
+// declaration of functions
 void MakeNullList();
 void InserTailList(char *elem, int flag_dir);
+void DeleteItemList(char *elem);
 void PrintList();
 void ls_directory(char *arg);
-void ls_recursive();
 int number_of_core();
-
+void *thread_function(void *arg);
+void main_thread(List *lis, int n_core);
 
 int main(int argc, char **argv) {
     
     const int n_core = number_of_core();
-    //struct stat *buffer;
-    
-    MakeNullList();
-    ls_directory(argv[1]);
-    ls_recursive();	
+    int res;
 
-    PrintList();
+    res = pthread_mutex_init(&work_mutex, NULL); // initialization of the mutex
+
+    if (res != 0) {
+	printf("Mutex initialization failed\n"); 
+	exit(EXIT_FAILURE);
+    }    
+
+    MakeNullList();
+    ls_directory(argv[1]); // listing of working directory 
+
+    main_thread(&list, n_core); // recursive listing
     
-    printf("\nIl numero di core della CPU e' %d\n", n_core);
+    printf("\Number of CPU cores is %d\n", n_core);
     
     exit(EXIT_SUCCESS);
     
 }
 
-// function that list recursive file in directory
-void ls_recursive() {
-	
-    List lis=list;
+// main thread recursively searches the directories and creates the relative threads
+void main_thread(List *lis, int n_core) {
 
-    while (lis != NULL) {
+   pthread_t thread_id;
+
+    if (*lis != NULL) {
+
 	// check if the member of list is a directory
-        if(lis->is_directory==1) {
-	    ls_directory(lis->file_path); // add files and directory inside it in the list			
+        if((*lis)->is_directory==1) {
+
+	    if(current_number_of_thread<n_core) {
+	        current_number_of_thread++;
+		printf("Create thread %d / %d", current_number_of_thread, n_core);
+		if (pthread_create(&thread_id, NULL, thread_function,(void *)((*lis)->file_path)) != 0) { 
+		    printf("Thread creation failed\n");
+		    exit(EXIT_FAILURE); 
+		}
+		sleep(3);
+	    }
 	}
-        lis = lis->next;
-   }
+
+	main_thread(&(*lis)->next, n_core);
+    } 
 
 }
 
-//function that initializes a list
+// thread handeler that deletes the directory from the list and calls ls_directory funcion
+void *thread_function(void *arg) {
+     
+    //pthread_mutex_lock(&work_mutex);
+    DeleteItemList((char *)arg);
+    ls_directory((char *)arg);
+    PrintList();
+    current_number_of_thread--;
+    //pthread_mutex_unlock(&work_mutex);
+
+}
+
+// function that initializes a list
 void MakeNullList() {
     list = NULL;
 }
 
-//function that queues a string in a list
+// function that queues a string in a list
 void InserTailList(char *elem, int flag_dir) { 
 
     List paux, last; 
@@ -86,8 +119,38 @@ void InserTailList(char *elem, int flag_dir) {
 
 } 
 
+// function that given a path deletes the element from the list
+void DeleteItemList(char *elem) {
 
-//function that prints a list of strings
+    List prec;
+    List corr;
+    int trovato;
+
+    if(list!=NULL) {
+	if(strcmp(list->file_path,elem)==0) {
+	    prec=list;
+	    list=list->next;
+	    free(prec);
+	} else {
+	    prec=list;
+	    corr=prec->next;
+	    trovato=0;
+	    while(corr!=NULL && !trovato) {
+	        if(strcmp(corr->file_path,elem)==0) {
+		    trovato=1;
+		    prec->next=corr->next;
+		    free(corr);
+	        } else {
+		    prec=prec->next;
+		    corr=prec->next;
+	        }
+	    }
+        }
+    }
+
+}
+
+// function that prints a list of strings
 void PrintList() {
     
     List lis=list;
@@ -100,7 +163,7 @@ void PrintList() {
     
 }
 
-//function that inserts the files contained in a directory into a list
+// function that inserts the files contained in a directory into a list
 void ls_directory(char *arg) {
     
     char *str;
@@ -157,7 +220,7 @@ int number_of_core() {
         // searching for the string "cpu"
         if(strcmp(str,"cpu")==0){
             fscanf(f, "%s", str);
-            // searching for the string "cores"
+            // searching for the string "cores
             if(strcmp(str,"cores")==0) {
                 fscanf(f, "%s", str); // string that contains ":"
                 fscanf(f, "%d", &numbers_core); //now numbers_core contains the number of the core
