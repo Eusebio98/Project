@@ -8,7 +8,6 @@
 #include <sys/stat.h>
 #include <pthread.h>
 
-
 // definition node list
 typedef struct struct_list {
     char *file_path;
@@ -35,11 +34,9 @@ void main_thread(List *lis, int n_core);
 int main(int argc, char **argv) {
     
     const int n_core = number_of_core();
-    int res;
 
-    res = pthread_mutex_init(&work_mutex, NULL); // initialization of the mutex
-
-    if (res != 0) {
+    // initialization of the mutex
+    if (pthread_mutex_init(&work_mutex, NULL) != 0) {
 	printf("Mutex initialization failed\n"); 
 	exit(EXIT_FAILURE);
     }    
@@ -49,7 +46,7 @@ int main(int argc, char **argv) {
 
     main_thread(&list, n_core); // recursive listing
     
-    printf("\Number of CPU cores is %d\n", n_core);
+    printf("\nNumber of CPU cores is %d\n", n_core);
     
     exit(EXIT_SUCCESS);
     
