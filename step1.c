@@ -47,7 +47,6 @@ int number_of_core();
 void *thread_function(void *arg);
 void AddList(List lis, List *main_list);
 List FindDir();
-void menu();
 
 // declaration of global variables
 List list;
@@ -60,7 +59,6 @@ int main(int argc, char **argv) {
     const int n_core = number_of_core();
     pthread_t thread_id[n_core];
     exit_check=(int *)malloc(n_core*sizeof(int)); // vector of integers containing the flags related to the exit condition of threads
-    char *str;
     int i=0;
 
     printf("\n--> Number of CPU cores is %d\n", n_core);
