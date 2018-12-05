@@ -1,7 +1,17 @@
 
 /* Belfiore Eusebio matricola: 046001782 */
 
-/* This program realizes what is required in the delivery of the SO project. The algorithm requires an initial path to be passed as an argument to the program. The main thread lists the initial path keeping the result in a global list and then creates a number of threads equal to the number of cores present in the CPU. The threads access the list through a mutually exclusive access (with mutex) and take charge of the first directory they find, eliminating it from the global list, listing it and adding the result to the global list. Empty directories are simply deleted as their listing will be empty. The threads before leaving their loop check that the other threads have finished their execution. The mechanism is implemented through an array of integers, whose size is equal to the number of CPU cores. Each thread arrived at the end of the list sets the element relative to its index of this array equal to 1 and checks if all the other elements of this array are equal to 1. If it were so it means that there are no more directories in the list and all threads can terminate. Otherwise the thread returns to the loop to check if another thread has added additional directories to the global list. */
+/* This program realizes what is required in the delivery of the SO project. 
+   The algorithm requires an initial path to be passed as an argument to the program. The main thread lists the initial path 
+   keeping the result in a global list and then creates a number of threads equal to the number of cores present in the CPU. 
+   The threads access the list through a mutually exclusive access (with mutex) and take charge of the first directory they find,
+   eliminating it from the global list, listing it and adding the result to the global list. Empty directories are simply deleted
+   as their listing will be empty. The threads before leaving their loop check that the other threads have finished their 
+   execution. The mechanism is implemented through an array of integers, whose size is equal to the number of CPU cores. 
+   Each thread arrived at the end of the list sets the element relative to its index of this array equal to 1 and checks if all
+   the other elements of this array are equal to 1. If it were so it means that there are no more directories in the list and all
+   threads can terminate. Otherwise the thread returns to the loop to check if another thread has added additional directories to
+   the global list. */
 
 /* Some directories to be listed may require root permissions, so it's recommended to run the program only as root. */
 
