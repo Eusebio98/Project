@@ -308,6 +308,7 @@ void ls_directory(List *lis, char *arg) {
     closedir(dr);
     
 }
+
 // function that returns the number of CPU cores
 int number_of_core() {
     
