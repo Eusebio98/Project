@@ -1,21 +1,18 @@
 
 /* Belfiore Eusebio matricola: 046001782 */
 
-/* This program realizes what is required in the delivery of the SO project. 
-   The algorithm requires an initial path to be passed as an argument to the program. The main thread lists the initial path 
-   keeping the result in a global list and then creates a number of threads equal to the number of cores present in the CPU. 
-   The threads access the list through a mutually exclusive access (with mutex) and take charge of the first directory they find,
-   eliminating it from the global list, listing it and adding the result to the global list. Empty directories are simply deleted
-   as their listing will be empty. The threads before leaving their loop check that the other threads have finished their 
-   execution. The mechanism is implemented through an array of integers, whose size is equal to the number of CPU cores. 
-   Each thread arrived at the end of the list sets the element relative to its index of this array equal to 1 and checks if all
-   the other elements of this array are equal to 1. If it were so it means that there are no more directories in the list and all
-   threads can terminate. Otherwise the thread returns to the loop to check if another thread has added additional directories to
-   the global list. */
+/* This program realizes what is required in the delivery of the SO project. The algorithm requires an initial path to be passed as an argument to the program. The main thread lists the initial path keeping the result in a global list and then creates a number of threads equal to the number of cores present in the CPU. The threads access the list through a mutually exclusive access (with mutex) and take charge of the first directory they find, eliminating it from the global list, listing it and adding the result to the global list. Empty directories are simply deleted as their listing will be empty. The threads before leaving their loop check that the other threads have finished their execution. The mechanism is implemented through an array of integers, whose size is equal to the number of CPU cores. Each thread arrived at the end of the list sets the element relative to its index of this array equal to 1 and checks if all the other elements of this array are equal to 1. If it were so it means that there are no more directories in the list and all threads can terminate. Otherwise the thread returns to the loop to check if another thread has added additional directories to the global list. */
 
 /* Some directories to be listed may require root permissions, so it's recommended to run the program only as root. */
 
-/* IMPORTANT!! -> in execution there are errors in the listing of some system folders -> must correct these errors!! */
+/* IMPORTANT ON ROOT LISTING!! --> the following directorties --> "/proc" and "/run" cause run-time problems in listing of subdirectories and files, so I exclude them from the listing of root.. */
+
+/* During compilation, the program returns the following warning: 
+
+warning: assignment makes integer from pointer without a cast [-Wint-conversion]
+argv[1][strlen(argv[1])-1]=NULL;
+
+it can be safely ignored. */
 
 /* The path passed as argument can terminate indifferently with or without the '/' character. */
 
@@ -54,6 +51,7 @@ pthread_mutex_t work_mutex; // this mutex protects the global list
 pthread_mutex_t mutex_check; // this mutex protects the integer vector exit_check 
 int *exit_check; // pointer to the first element of a vector of integers
 
+
 int main(int argc, char **argv) {
     
     const int n_core = number_of_core();
@@ -64,13 +62,13 @@ int main(int argc, char **argv) {
     printf("\n--> Number of CPU cores is %d\n", n_core);
 	
     // if the last character of the argument is '/' I remove it
-    if(argv[1][strlen(argv[1])-1] == '/') 
+    if(strlen(argv[1])!=1 && argv[1][strlen(argv[1])-1] == '/') 
 	argv[1][strlen(argv[1])-1]=NULL;
 
     MakeNullList(&list);
     ls_directory(&list, argv[1]); // listing of directory passed as argument
 
-    printf("--> Listing of directory and subdirectory of %s\n", argv[1]);
+    printf("\n--> Listing of directory and subdirectory of %s\n", argv[1]);
 
     // initialization of the mutex
     if (pthread_mutex_init(&work_mutex, NULL) != 0) {
@@ -84,13 +82,13 @@ int main(int argc, char **argv) {
 
     // creation of as many threads as the cores of the CPU
     for(i=0; i<n_core; i++) {
-	if(pthread_create(&thread_id[i], NULL, thread_function, (void *)i) != 0) { 
+	if(pthread_create(&thread_id[i], NULL, thread_function, (void *)(intptr_t)i) != 0) { 
 	    printf("Thread creation failed\n");
 	    exit(EXIT_FAILURE); 
 	}	
     }
 
-    printf("\nScanning of dir and subdir in progress...\n");
+    printf("\n--> Scanning of dir and subdir in progress...\n");
 
     // main thread waits for threads before exiting
     for(i=0; i<n_core; i++) {
@@ -127,13 +125,13 @@ void *thread_function(void *arg) {
 	lis=FindDir(); // find first directory in the list
 
 	if(lis!=NULL) {
-	
+
 	    DeleteItemList(lis->file_path); // delete the directory from the list without releasing lis memory
 	    pthread_mutex_unlock(&work_mutex);
 
 	    // enter the value 0 in exit_check[] so that the other threads do not exit and can check the global list again
 	    pthread_mutex_lock(&mutex_check);
-	    exit_check[(int)arg]=0;
+	    exit_check[(intptr_t)arg]=0;
             pthread_mutex_unlock(&mutex_check);
 
 	    // create local list of file and subdirectory
@@ -149,7 +147,7 @@ void *thread_function(void *arg) {
     	} else {
 
 	    pthread_mutex_lock(&mutex_check); // lock on mutex_check
-	    exit_check[(int)arg]=1; // set exit_check related to thread to 1 
+	    exit_check[(intptr_t)arg]=1; // set exit_check related to thread to 1 
 	    
 	    sum=0;
 
@@ -168,12 +166,17 @@ void *thread_function(void *arg) {
 	}
 	
     }
-	pthread_exit(NULL);
+    pthread_exit(NULL);
 
 }
 
 // function that concatenates a list passed as a parameter to the global list
 void AddList(List lis, List *main_list) {
+
+    if((*main_list) == NULL) {
+	*main_list=lis;
+	return;
+     }
 
     if((*main_list)->next == NULL) {
 	(*main_list)->next=lis;
@@ -222,12 +225,16 @@ void InserTailList(List *lis, char *elem, int flag_dir) {
 
 } 
 
+
 // function that given a path deletes the element from the list without freeing memory
 void DeleteItemList(char *elem) {
 
-    List prec;
-    List corr;
+    List prec= NULL;
+    List corr= NULL;
     int trovato;
+
+    if((list->next)==NULL)
+	list=NULL;
 
     if(list!=NULL) {
 	if(strcmp(list->file_path,elem)==0) {
@@ -259,7 +266,7 @@ void PrintList() {
     List lis=list;
     printf("\n");
     while (lis != NULL) {
-        printf("FILE -> %s\n", lis->file_path);
+        printf("FILE -> %s %d\n", lis->file_path, lis->is_directory);
         lis = lis->next;
     }
     printf("\n");
@@ -276,14 +283,14 @@ void ls_directory(List *lis, char *arg) {
     
     // opendir returns NULL if couldn't open directory
     if (dr == NULL) {
-        printf("Could not open current directory\n");
+        printf("\nCould not open the following directory --> %s\n", arg);
         exit(EXIT_FAILURE);
     }
     
     // for readdir()
     while ((de = readdir(dr)) != NULL) {
         
-        // don't add the current and the upper directory to the list
+        // don't add the current and the upper directory to the list 
         if(strcmp(de->d_name,".")!=0 && strcmp(de->d_name,"..")!=0) {
 	    str=NULL;
             // concatenate the path of the folder passed as an argument with the files inside it
@@ -294,12 +301,17 @@ void ls_directory(List *lis, char *arg) {
 	    if(strcmp(str,"/")!=0)
 	    	strcat(str, "/");
 	    strcat(str, de->d_name);
+
+	    // don't add the following directory ---> "/proc" and "/run" because of problems of run time listing 
+	    if(strcmp(str,"/proc")!=0 && strcmp(str,"/run")!=0) {
 		
-	    if(de->d_type == DT_DIR)
-	        InserTailList(lis, str, 1); // set the flag to know it's a directory
-	    else 
-	        InserTailList(lis, str, 0); // it's not a directory
+	        if(de->d_type == DT_DIR)
+	            InserTailList(lis, str, 1); // set the flag to know it's a directory
+	        else 
+	            InserTailList(lis, str, 0); // it's not a directory
 	
+	    }
+
  	    str=NULL;
 	    free(str);
          }
