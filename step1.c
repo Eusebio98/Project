@@ -276,7 +276,7 @@ void PrintList() {
     List lis=list;
     printf("\n");
     while (lis != NULL) {
-        printf("FILE -> %s %d\n", lis->file_path, lis->is_directory);
+        printf("FILE -> %s\n", lis->file_path);
         lis = lis->next;
     }
     printf("\n");
