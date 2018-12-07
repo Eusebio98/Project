@@ -285,6 +285,10 @@ void PrintList() {
     
     List lis=list;
     printf("\n");
+    if(list==NULL) {
+	printf("No file found\n\n");
+	return;
+    }
     while (lis != NULL) {
         printf("FILE -> %s\n", lis->file_path);
         lis = lis->next;
