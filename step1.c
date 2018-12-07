@@ -245,7 +245,6 @@ void InserTailList(List *lis, char *elem, int flag_dir) {
 
 } 
 
-
 // function that given a path deletes the element from the list without freeing memory
 void DeleteItemList(char *elem) {
 
