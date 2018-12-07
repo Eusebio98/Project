@@ -69,6 +69,12 @@ int main(int argc, char **argv) {
     exit_check=(int *)malloc(n_core*sizeof(int)); // vector of integers containing the flags related to the exit condition of threads
     int i=0;
 
+    // check if user had insert the argument
+    if(argc==1) {
+	printf("\nYou have to insert first directory path as argument\n\n");
+	exit(EXIT_FAILURE);
+    }
+
     printf("\n--> Number of CPU cores is %d\n", n_core);
 	
     // if the last character of the argument is '/' I remove it
@@ -82,9 +88,13 @@ int main(int argc, char **argv) {
 
     // initialization of the mutex
     if (pthread_mutex_init(&work_mutex, NULL) != 0) {
-	printf("Mutex initialization failed\n"); 
+	printf("Mutex work_mutex initialization failed\n"); 
 	exit(EXIT_FAILURE);
-    }    
+    } 
+    if (pthread_mutex_init(&mutex_check, NULL) != 0) {
+	printf("Mutex mutex_check initialization failed\n"); 
+	exit(EXIT_FAILURE);
+    }
 
     // initialization of the vector of the exit variables
     for(i=0; i<n_core; i++)
