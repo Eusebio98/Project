@@ -17,13 +17,6 @@ loop to check if another thread has added additional directories to the global l
 /* IMPORTANT ON ROOT LISTING!! --> the following directorties --> "/proc" and "/run" cause run-time problems in listing of
 subdirectories and files, so I exclude them from the listing of root.. */
 
-/* During compilation, the program returns the following warning: 
-
-warning: assignment makes integer from pointer without a cast [-Wint-conversion]
-argv[1][strlen(argv[1])-1]=NULL;
-
-it can be safely ignored. */
-
 /* The path passed as argument can terminate indifferently with or without the '/' character. */
 
 #include <stdio.h>
@@ -79,7 +72,7 @@ int main(int argc, char **argv) {
 	
     // if the last character of the argument is '/' I remove it
     if(strlen(argv[1])!=1 && argv[1][strlen(argv[1])-1] == '/') 
-	argv[1][strlen(argv[1])-1]=NULL;
+	argv[1][strlen(argv[1])-1]='\0';
 
     MakeNullList(&list);
     ls_directory(&list, argv[1]); // listing of directory passed as argument
