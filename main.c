@@ -30,9 +30,11 @@ int number_of_core();
 void *thread_function(void *arg);
 void AddList(List lis, List *main_list);
 List FindDir();
-void listhome(char *path);
+void listpath(char *path);
 void *connection_thread(void *arg);
 void copy(List *l1, List l2);
+void search_string(char *str, List lis, int sock);
+void sendList(List lis, int sock);
 
 // declaration of global variables
 List list;
@@ -69,7 +71,7 @@ int main(void) {
 	exit(EXIT_FAILURE);
     }
 
-    listhome("/home"); // listing of /home 
+    listpath("/home/eusebio/Scrivania"); // listing of /home 
     
     // now the global list contains all indexed files available from possible clients
 
@@ -145,11 +147,69 @@ void *connection_thread(void *arg) {
     sprintf(str1, "Welcome %s\n", username);
     write(sock, (void *)str1, strlen(str1));    
 
-    /*copy(&lis, list); // copying of global list in local lis  
-    PrintList(lis); */
+    copy(&lis, list); // copying of global list in local lis   
+
+    while(1) {
+
+	sendList(lis, sock);
+
+	while(1) {
+	
+            strcpy(str1, "\nSyntax menu options: \n1) search file\n2) download <file>\n3) upload <file>\n4) exit\nOption: ");
+            write(sock, (void *)str1, strlen(str1));
+
+            len = read(sock, (void *)str1, 99);
+	    if(len > 0)
+	        str1[len]='\0';
+
+	    if(len >= 7 && strncmp(str1, "search ", 7) == 0) {		
+	        strcpy(str1, &str1[7]);
+                search_string(str1, lis, sock);
+		//PrintList(lis);
+	    }
+
+	}
+
+   }
 
     close(sock); // closing of comunication socket       
 
+}
+
+// function that sends only the paths containing the string passed as argument to the client
+void search_string(char *str, List lis, int sock) {
+
+    int count = 0;
+    int i = 0;
+    while(lis->next!=NULL) {
+	for(i=0; i<strlen(lis->file_path); i++) 
+    	    if(strncmp(&(lis->file_path)[i], str, strlen(str)-2) == 0) {
+		count++;
+                write(sock, (void *)lis->file_path, strlen(lis->file_path));
+		break;
+	    }
+	lis=lis->next;
+    }
+
+    if(count == 0) {
+	sprintf(str, "%d", count);
+	write(sock, (void *)str, strlen(str));
+    }
+
+}
+
+// function that sends a list of paths to the client
+void sendList(List lis, int sock) {
+
+    char *buff;
+    while(lis != NULL) {
+	buff = (char *)malloc(sizeof(lis->file_path));
+	strcpy(buff, lis->file_path);
+	write(sock, (void *)buff, strlen(buff));
+	strcpy(buff, "");
+	free(buff);
+	lis = lis->next;
+    }
 }
 
 // function that copies List l2 in List l1
@@ -163,7 +223,7 @@ void copy(List *l1, List l2) {
 }
 
 // function that lists a path passed as argument
-void listhome(char *path) {
+void listpath(char *path) {
 
     const int n_core = number_of_core();
     pthread_t thread_id[n_core];
