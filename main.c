@@ -10,6 +10,9 @@
 #include <pthread.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
+#include <netinet/in.h>
+
+#include <fcntl.h>
 
 // definition node list
 typedef struct struct_list {
@@ -32,9 +35,8 @@ void AddList(List lis, List *main_list);
 List FindDir();
 void listpath(char *path);
 void *connection_thread(void *arg);
-void copy(List *l1, List l2);
-void search_string(char *str, List lis, int sock);
-void sendList(List lis, int sock);
+void sendList(List lis, int sock, char *str);
+int download(char *str, int sock);
 
 // declaration of global variables
 List list;
@@ -81,7 +83,7 @@ int main(void) {
 	clisock = accept(servsock, NULL, NULL); 
 	if (clisock == -1) {
 	    perror("Error in function accept()\n");
-	    exit(EXIT_FAILURE);
+	    continue;
 	}
 
 	printf("New connection\n");
@@ -98,12 +100,12 @@ int main(void) {
 
 void *connection_thread(void *arg) {
 
-    int sock = (*(int *)arg);
-    List lis = NULL;
+    int sock = (*(int *)arg); // comunication socket id
     int len = 0;
     char username[33], password[33];
-    char str1[100], str2[33];
-    int user_found = 0;
+    char str1[300], str2[33]; // support variables
+    int user_found = 0; 
+    int time_to_exit = 0; // variable that governs the exit of the thread's while(1)
 
     // server receives username and password from client
 
@@ -124,6 +126,7 @@ void *connection_thread(void *arg) {
 
     if(f == NULL) {
         printf("\nImpossible to open /home/user_pass.txt\n"); // maybe the file doesn't exist!!
+        printf("Client disconnected\n");
         close(sock);
     }
 
@@ -140,49 +143,96 @@ void *connection_thread(void *arg) {
     if(user_found == 0) {
 	strcpy(str1, "You don't have right permission... Closing connection\n");	 
 	write(sock, (void *)str1, strlen(str1));
+        printf("Client disconnected\n");
 	close(sock);
     }
 
     // user logged in correctly
     sprintf(str1, "Welcome %s\n", username);
-    write(sock, (void *)str1, strlen(str1));    
+    write(sock, (void *)str1, strlen(str1));   
 
-    copy(&lis, list); // copying of global list in local lis   
+    while(!time_to_exit) {
 
-    while(1) {
-
-	sendList(lis, sock);
+        pthread_mutex_lock(&work_mutex);
+	sendList(list, sock, "/home/eusebio/Scrivania"); // send the complete list to the client
+	pthread_mutex_unlock(&work_mutex);
 
 	while(1) {
 	
-            strcpy(str1, "\nSyntax menu options: \n1) search file\n2) download <file>\n3) upload <file>\n4) exit\nOption: ");
+            strcpy(str1, "\n\nSyntax menu options: \n1) search file\n2) download <file>\n3) upload <file>\n4) exit\nOption: ");
             write(sock, (void *)str1, strlen(str1));
 
             len = read(sock, (void *)str1, 99);
 	    if(len > 0)
 	        str1[len]='\0';
 
-	    if(len >= 7 && strncmp(str1, "search ", 7) == 0) {		
+	    // send to the client the list of paths containing the keyword sent by client 
+	    if(len >= 9 && strncmp(str1, "search ", 7) == 0) {		
 	        strcpy(str1, &str1[7]);
-                search_string(str1, lis, sock);
-		//PrintList(lis);
+		pthread_mutex_lock(&work_mutex);
+		sendList(list, sock, str1);
+		pthread_mutex_unlock(&work_mutex);
 	    }
 
-	}
+	    else if(len >= 11 && strncmp(str1, "download ", 9) == 0) {		
+		strcpy(str1, &str1[9]);	
+		// check on dowload error
+		if(download(str1, sock) == 1) {
+		    sprintf(str1, "Dowload error\n");
+		    write(sock, (void *)str1, strlen(str1));
+		}
+	    }
+
+	    // exit from while and set time_to_exit to 1
+	    else if(len == 6 && strncmp(str1, "exit", 4) == 0) {
+		time_to_exit = 1;
+	        break;
+	    }
+
+	    // invalid command 
+            else {
+		sprintf(str1, "Invalid command\n");
+		write(sock, (void *)str1, strlen(str1));
+	    }
+
+	}      
 
    }
 
-    close(sock); // closing of comunication socket       
+    printf("Client disconnected\n");
+    close(sock); // closing of comunication socket   
 
 }
 
-// function that sends only the paths containing the string passed as argument to the client
-void search_string(char *str, List lis, int sock) {
+// function that sends the file passed as argument to the client as a stream of characters
+int download(char *str, int sock) {
+
+    str[strlen(str)-2] = '\0';	
+    char buffer[100]; 
+    int n = 1;
+    int f; // file descriptor
+
+    f = open(str, O_RDONLY); 
+
+    if(f == -1)
+        return 1;
+
+    while (n>0) {
+    	n = read(f, &buffer, 100);
+	write(sock, (void *)buffer, n);
+    }
+
+    close(f);
+
+}
+
+// function that sends a list of paths to the client ... the paths containing the string passed as argument
+void sendList(List lis, int sock, char *str) {
 
     int count = 0;
     int i = 0;
-    while(lis->next!=NULL) {
-	for(i=0; i<strlen(lis->file_path); i++) 
+    while(lis != NULL) {
+        for(i=0; i<strlen(lis->file_path); i++) 
     	    if(strncmp(&(lis->file_path)[i], str, strlen(str)-2) == 0) {
 		count++;
                 write(sock, (void *)lis->file_path, strlen(lis->file_path));
@@ -194,30 +244,6 @@ void search_string(char *str, List lis, int sock) {
     if(count == 0) {
 	sprintf(str, "%d", count);
 	write(sock, (void *)str, strlen(str));
-    }
-
-}
-
-// function that sends a list of paths to the client
-void sendList(List lis, int sock) {
-
-    char *buff;
-    while(lis != NULL) {
-	buff = (char *)malloc(sizeof(lis->file_path));
-	strcpy(buff, lis->file_path);
-	write(sock, (void *)buff, strlen(buff));
-	strcpy(buff, "");
-	free(buff);
-	lis = lis->next;
-    }
-}
-
-// function that copies List l2 in List l1
-void copy(List *l1, List l2) {
-
-    while(l2 != NULL) {
-    	InserTailList(l1, l2->file_path, l2->is_directory);
- 	l2 = l2->next;   
     }
 
 }
