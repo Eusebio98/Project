@@ -37,7 +37,7 @@ List FindDir();
 void listpath(char *path);
 void *connection_thread(void *arg);
 void sendList(List lis, int sock, char *str);
-int download(char *str, int sock);
+void download(char *str, int sock);
 
 // declaration of global variables
 List list;
@@ -106,7 +106,6 @@ void *connection_thread(void *arg) {
     char username[33], password[33];
     char str1[1000], str2[33]; // support variables
     int user_found = 0; 
-    int time_to_exit = 0; // variable that governs the exit of the thread's while(1)
 
     // server receives username and password from client
 
@@ -154,7 +153,7 @@ void *connection_thread(void *arg) {
     }
 
     // user logged in correctly
-    sprintf(str1, "Welcome %s\n", username);
+    sprintf(str1, "\nWelcome %s\n", username);
     write(sock, (void *)str1, strlen(str1));
 
     // login response error 
@@ -167,11 +166,9 @@ void *connection_thread(void *arg) {
         pthread_exit(NULL);
     }
 
-    while(!time_to_exit) {
-
-        pthread_mutex_lock(&work_mutex);
-	sendList(list, sock, "/home/eusebio/Scrivania"); // send the complete list to the client
-	pthread_mutex_unlock(&work_mutex);
+    pthread_mutex_lock(&work_mutex);
+    sendList(list, sock, "/home/eusebio/Scrivania"); // send the complete list to the client
+    pthread_mutex_unlock(&work_mutex);
 
 	while(1) {
 
@@ -187,20 +184,14 @@ void *connection_thread(void *arg) {
 		pthread_mutex_unlock(&work_mutex);
 	    }
 
-	    else if(len >= 11 && strncmp(str1, "download ", 9) == 0) {		
+	    else if(len > 10 && strncmp(str1, "download ", 9) == 0) {		
 		strcpy(str1, &str1[9]);	
-		// check on dowload error
-		if(download(str1, sock) == 1) {
-		    sprintf(str1, "Dowload error\n");
-		    write(sock, (void *)str1, strlen(str1));
-		}
+		download(str1, sock); 
 	    }
 
 	    // exit from while and set time_to_exit to 1
-	    else if(len == 5 && strncmp(str1, "exit", 4) == 0) {
-		time_to_exit = 1;
+	    else if(len == 5 && strncmp(str1, "exit", 4) == 0) 
 	        break;
-	    }
 
 	    // invalid command 
             else {
@@ -210,7 +201,6 @@ void *connection_thread(void *arg) {
 
 	}      
 
-   }
 
     printf("Client disconnected\n");
     close(sock); // closing of comunication socket   
@@ -218,25 +208,47 @@ void *connection_thread(void *arg) {
 }
 
 // function that sends the file passed as argument to the client as a stream of characters
-int download(char *str, int sock) {
+void download(char *str, int sock) {
 
-    str[strlen(str)-2] = '\0';	
-    char buffer[100]; 
+    char str_ok[16];
+    char buffer[512]; 
     int n = 1;
     int f; // file descriptor
+    int len = 0;
+    int i=0;
 
     f = open(str, O_RDONLY); 
 
-    if(f == -1)
-        return 1;
+    // error in file opening --> sending 0 to indicate download error
+    if(f == -1) {
+	sprintf(str, "%d", 0);
+	write(sock, (void *)str, strlen(str));
+	// ok from client
+        len = read(sock, (void *)str_ok, 15);
+	return;
+    }
 
-    while (n>0) {
-    	n = read(f, &buffer, 100);
-	write(sock, (void *)buffer, n);
+    while (1) {
+
+    	n = read(f, &buffer, 512);
+
+	if(n>0) {
+	    write(sock, (void *)buffer, n);
+	    // ok from client
+	    len = read(sock, (void *)str_ok, 15);
+	} 
+
+	else {
+	    // sending escape sequence to indicate to the client that the sending is finished
+            sprintf(str_ok, "escape_1234");
+            write(sock, (void *)str_ok, strlen(str_ok));
+            // ok from client
+            len = read(sock, (void *)str_ok, 15);
+	    break;
+	}
     }
 
     close(f);
-    return 0;
 
 }
 
@@ -260,6 +272,7 @@ void sendList(List lis, int sock, char *str) {
 	lis=lis->next;
     }
 
+    // sending 0 to indicate no file found
     if(count == 0) {
 	sprintf(str, "%d", count);
 	write(sock, (void *)str, strlen(str));

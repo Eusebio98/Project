@@ -144,6 +144,39 @@ int main(void) {
 
 	        }
 
+            }
+
+	    // download function
+	    else if(strlen(buffer) > 10 && strncmp(buffer, "download ", 9) == 0) {
+
+                while(1) {
+
+	            len = read(clisock, (void *)buffer, 1000);
+    	            if(len > 0)
+                        buffer[len] = '\0';
+
+		    // if server sends 0 --> error in file download 
+		    if(strlen(buffer) == 1 &&strncmp(buffer, "0", 1) == 0) {
+		        printf("\nError in dowload, maybe wrong path!\n");
+			sprintf(buffer, "ok");
+	                write(clisock, (void *)buffer, strlen(buffer)); // send ok to server and exit while
+		        break;
+		    }
+
+		    // check escape sequence
+	            if(strncmp(buffer, "escape_1234", 11) == 0) {
+		        sprintf(buffer, "ok");
+	                write(clisock, (void *)buffer, strlen(buffer)); // send ok to server and exit while
+	                break;
+	            }
+
+		    printf("%s", buffer);
+
+		    sprintf(buffer, "ok");
+	            write(clisock, (void *)buffer, strlen(buffer)); // send ok to server
+
+		}
+		
 	    }
 
 	    // invalid command
