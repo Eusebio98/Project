@@ -170,37 +170,37 @@ void *connection_thread(void *arg) {
     sendList(list, sock, "/home/eusebio/Scrivania"); // send the complete list to the client
     pthread_mutex_unlock(&work_mutex);
 
-	while(1) {
+    while(1) {
 
-            len = read(sock, (void *)str1, 999);
-	    if(len > 0)
-	        str1[len-1]='\0';
+        len = read(sock, (void *)str1, 999);
+	if(len > 0)
+	    str1[len-1]='\0';
 
-	    // send to the client the list of paths containing the keyword sent by client 
-	    if(len > 8 && strncmp(str1, "search ", 7) == 0) {		
-	        strcpy(str1, &str1[7]);
-		pthread_mutex_lock(&work_mutex);
-		sendList(list, sock, str1);
-		pthread_mutex_unlock(&work_mutex);
-	    }
+	// send to the client the list of paths containing the keyword sent by client 
+	if(len > 8 && strncmp(str1, "search ", 7) == 0) {		
+	    strcpy(str1, &str1[7]);
+	    pthread_mutex_lock(&work_mutex);
+	    sendList(list, sock, str1);
+	    pthread_mutex_unlock(&work_mutex);
+	}
 
-	    else if(len > 10 && strncmp(str1, "download ", 9) == 0) {		
-		strcpy(str1, &str1[9]);	
-		download(str1, sock); 
-	    }
+	// download file relative to the path sent by the client
+	else if(len > 10 && strncmp(str1, "download ", 9) == 0) {		
+	    strcpy(str1, &str1[9]);	
+	    download(str1, sock); 
+	}
 
-	    // exit from while and set time_to_exit to 1
-	    else if(len == 5 && strncmp(str1, "exit", 4) == 0) 
-	        break;
+	// exit from while
+	else if(len == 5 && strncmp(str1, "exit", 4) == 0) 
+	    break;
 
-	    // invalid command 
-            else {
-		sprintf(str1, "Invalid command\n");
-		write(sock, (void *)str1, strlen(str1));
-	    }
+	// invalid command 
+        else {
+	    sprintf(str1, "Invalid command\n");
+	    write(sock, (void *)str1, strlen(str1));
+	}
 
-	}      
-
+    }      
 
     printf("Client disconnected\n");
     close(sock); // closing of comunication socket   
@@ -215,7 +215,6 @@ void download(char *str, int sock) {
     int n = 1;
     int f; // file descriptor
     int len = 0;
-    int i=0;
 
     f = open(str, O_RDONLY); 
 
@@ -233,7 +232,7 @@ void download(char *str, int sock) {
     	n = read(f, &buffer, 512);
 
 	if(n>0) {
-	    write(sock, (void *)buffer, n);
+	    write(sock, (void *)buffer, n); // read from file
 	    // ok from client
 	    len = read(sock, (void *)str_ok, 15);
 	} 
