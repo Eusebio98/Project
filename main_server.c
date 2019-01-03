@@ -110,7 +110,7 @@ void *connection_thread(void *arg) {
 
     // server receives username and password from client
 
-    strcpy(username, "Insert username: ");
+    strcpy(username, "\nInsert username: ");
     write(sock, (void *)username, strlen(username));
     len = read(sock, (void *)username, 32);
     if(len > 0)
@@ -177,10 +177,10 @@ void *connection_thread(void *arg) {
 
             len = read(sock, (void *)str1, 999);
 	    if(len > 0)
-	        str1[len]='\0';
+	        str1[len-1]='\0';
 
 	    // send to the client the list of paths containing the keyword sent by client 
-	    if(len >= 9 && strncmp(str1, "search ", 7) == 0) {		
+	    if(len > 8 && strncmp(str1, "search ", 7) == 0) {		
 	        strcpy(str1, &str1[7]);
 		pthread_mutex_lock(&work_mutex);
 		sendList(list, sock, str1);
@@ -250,7 +250,7 @@ void sendList(List lis, int sock, char *str) {
 
     while(lis != NULL) {
         for(i=0; i<strlen(lis->file_path); i++) 
-    	    if(strncmp(&(lis->file_path)[i], str, strlen(str)-2) == 0) {
+    	    if(strncmp(&(lis->file_path)[i], str, strlen(str)) == 0) {
 		count++;
                 write(sock, (void *)lis->file_path, strlen(lis->file_path)); // send file pathname to client
 		// ok from client
@@ -263,13 +263,17 @@ void sendList(List lis, int sock, char *str) {
     if(count == 0) {
 	sprintf(str, "%d", count);
 	write(sock, (void *)str, strlen(str));
+	// ok from client
+        len = read(sock, (void *)str_ok, 15);    
     }
-
-    // sending escape sequence to indicate to the client that the sending is finished
-    sprintf(str_ok, "escape_1234");
-    write(sock, (void *)str_ok, strlen(str_ok));
-    // ok from client
-    len = read(sock, (void *)str_ok, 15);    
+	
+    else {
+        // sending escape sequence to indicate to the client that the sending is finished
+        sprintf(str_ok, "escape_1234");
+        write(sock, (void *)str_ok, strlen(str_ok));
+        // ok from client
+        len = read(sock, (void *)str_ok, 15);
+    }   
 
 }
 

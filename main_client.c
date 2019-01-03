@@ -68,17 +68,26 @@ int main(void) {
 
     while(1) {
 
-	printf("\n-- LIST OF FILE --\n");
+	printf("\n--- LIST OF FILE ---\n"); // server sends list of file 
 
 	while(1) {
+
 	    len = read(clisock, (void *)buffer, 1000);
     	    if(len > 0)
                 buffer[len] = '\0';
 
+	    // if server sends 0 --> no file found
+            if(strncmp(buffer, "0", 1) == 0) {
+	        printf("No file found\n");
+		sprintf(buffer, "ok");
+	        write(clisock, (void *)buffer, strlen(buffer)); // send ok to server and exit while
+		break;
+	    }
+
 	    // check escape sequence
 	    if(strncmp(buffer, "escape_1234", 11) == 0) {
 		sprintf(buffer, "ok");
-	        write(clisock, (void *)buffer, strlen(buffer)); // send ok to server
+	        write(clisock, (void *)buffer, strlen(buffer)); // send ok to server and exit while
 	        break;
 	    }
 	
@@ -86,6 +95,7 @@ int main(void) {
 
 	    sprintf(buffer, "ok");
 	    write(clisock, (void *)buffer, strlen(buffer)); // send ok to server
+
 	}
 
         while(1) {
@@ -99,6 +109,41 @@ int main(void) {
 	    if(strlen(buffer) == 5 && strncmp(buffer, "exit", 4) == 0) {
 		close(clisock);
 		exit(EXIT_SUCCESS);
+	    }
+
+	    // search funcion 
+	    if(strlen(buffer) > 8 && strncmp(buffer, "search ", 7) == 0) {
+
+		printf("\n--- SEARCH RESULTS ---\n");
+
+		while(1) {
+
+	    	    len = read(clisock, (void *)buffer, 1000);
+    	            if(len > 0)
+                        buffer[len] = '\0';
+
+		    // if server sends 0 --> no file found 
+		    if(strncmp(buffer, "0", 1) == 0) {
+		        printf("No file found\n");
+			sprintf(buffer, "ok");
+	                write(clisock, (void *)buffer, strlen(buffer)); // send ok to server and exit while
+		        break;
+		    }
+
+	            // check escape sequence
+	            if(strncmp(buffer, "escape_1234", 11) == 0) {
+		        sprintf(buffer, "ok");
+	                write(clisock, (void *)buffer, strlen(buffer)); // send ok to server and exit while
+	                break;
+	            }
+	
+	            printf("%s\n", buffer);
+
+	            sprintf(buffer, "ok");
+	            write(clisock, (void *)buffer, strlen(buffer)); // send ok to server
+
+	        }
+
 	    }
 
 	    // invalid command
