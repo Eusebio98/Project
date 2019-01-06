@@ -227,6 +227,12 @@ void download(char *str, int sock) {
 	return;
     }
 
+    // sending 1 to indicate start download --> synchronization with the client
+    sprintf(str, "%d", 1);
+    write(sock, (void *)str, strlen(str));
+    // ok from client
+    len = read(sock, (void *)str_ok, 15);
+
     while (1) {
 
     	n = read(f, &buffer, 512);
