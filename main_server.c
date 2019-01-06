@@ -74,7 +74,7 @@ int main(void) {
 	exit(EXIT_FAILURE);
     }
 
-    listpath("/home/eusebio/Scrivania"); // listing of /home 
+    listpath("/home"); // listing of /home 
     
     // now the global list contains all indexed files available from possible clients
 
