@@ -74,7 +74,7 @@ int main(void) {
 	exit(EXIT_FAILURE);
     }
 
-    listpath("/home"); // listing of /home 
+    listpath("/home/eusebio/Scrivania"); // listing of /home 
     
     // now the global list contains all indexed files available from possible clients
 
@@ -122,7 +122,7 @@ void *connection_thread(void *arg) {
 	password[len-1]='\0';
 
     FILE *f = NULL;
-    f = fopen("/home/user_pass.txt", "rb"); // open the file that contains the list of authorized usernames and their passwords
+    f = fopen("/home/user_pass.txt", "r+"); // open the file that contains the list of authorized usernames and their passwords
 
     if(f == NULL) {
         printf("Impossible to open /home/user_pass.txt\n"); // maybe the file doesn't exist!!
@@ -141,20 +141,61 @@ void *connection_thread(void *arg) {
         }
     }
 
-    fclose(f);
+    if(user_found == 1) {
+	// user logged in correctly
+        sprintf(str1, "\nWelcome %s\n", username);
+        write(sock, (void *)str1, strlen(str1));
+    }
  
-    // username and password not found
+    // username or password not found
     if(user_found == 0) {
-	strcpy(str1, "You don't have right permission... Closing connection\n");	 
+	strcpy(str1, "You don't have right permission...\n");	 
 	write(sock, (void *)str1, strlen(str1));
-        printf("Client disconnected\n");
-	close(sock);
-	pthread_exit(NULL);
+
+	len = read(sock, (void *)str1, 32);
+    	    if(len > 0)
+	        str1[len]='\0';
+
+	// client wants to sign in 
+	if(strlen(str1) == 1 && strncmp(str1, "Y", 1) == 0) {
+	
+	    rewind(f);
+	    while(fscanf(f, "%s%s", str1, str2) == 2) {
+		if(strncmp(str1, username, strlen(str1)) == 0 && strlen(str1) == strlen(username)) {
+	    	    user_found=1; // username found
+	    	    break;
+		}
+            }
+
+	    // already exists this username --> closing client
+	    if(user_found == 1) {
+	        strcpy(str1, "User found, you cannot sign in...\n");	 
+	        write(sock, (void *)str1, strlen(str1));
+	        close(sock);
+	        fclose(f);
+	        pthread_exit(NULL);
+	    }
+	    
+	    // register username and password
+	    else {
+	        fprintf(f, "%s %s\n", username, password); // write username and password in /home/user_pass.txt
+	 	strcpy(str1, "User correctly sign in...\n");	 
+	        write(sock, (void *)str1, strlen(str1));
+	    }
+	   
+	}
+		
+	// client doesn't want to sign in
+	else if(strlen(str1) == 1 && strncmp(str1, "N", 1) == 0) {
+	    printf("Client disconnected\n");
+	    close(sock);
+	    fclose(f);
+	    pthread_exit(NULL);
+	}
+	
     }
 
-    // user logged in correctly
-    sprintf(str1, "\nWelcome %s\n", username);
-    write(sock, (void *)str1, strlen(str1));
+    fclose(f);
 
     // login response error 
     len = read(sock, (void *)str1, 99);
