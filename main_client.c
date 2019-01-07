@@ -22,6 +22,8 @@ int main(void) {
     char file_name[256]; // file name
     FILE *f; // file descriptor 
     char user[33];
+    int integer = 0;
+    int i;
 	
     clisock = socket(AF_INET, SOCK_STREAM, 0);
     if(clisock == -1) {
@@ -43,7 +45,21 @@ int main(void) {
     if(len > 0)
 	buffer[len] = '\0';
     printf("%s", buffer);
-    fgets(buffer, 199, stdin); // user interts username
+
+    // user interts username --> check if there is a ' ' in string --> if so user must insert another time username
+    while(1) {
+	integer = 0; // check variable
+        fgets(buffer, 199, stdin); // insert username 
+	for(i=0; i<strlen(buffer); i++) 
+	    if(strncmp(&(buffer)[i], " ", 1) == 0) {
+		printf("Error --> You cannot insert space\nInsert username: ");
+		integer = 1;	
+	        break;
+	    }
+	if(integer == 0)
+	    break; // leave while
+    }
+
     write(clisock, (void *)buffer, strlen(buffer)); // send username
     strcpy(user, buffer);
 
@@ -51,7 +67,21 @@ int main(void) {
     if(len > 0)
         buffer[len] = '\0';
     printf("%s", buffer);
-    fgets(buffer, 199, stdin); // user interts password
+
+    // user interts password --> check if there is a ' ' in string --> if so user must insert another time password
+    while(1) {
+	integer = 0; // check variable
+        fgets(buffer, 199, stdin); // insert password 
+	for(i=0; i<strlen(buffer); i++) 
+	    if(strncmp(&(buffer)[i], " ", 1) == 0) {
+		printf("Error --> You cannot insert space\nInsert password: ");
+		integer = 1;	
+	        break;
+	    }
+	if(integer == 0)
+		break; // leave while
+    }
+
     write(clisock, (void *)buffer, strlen(buffer)); // send password
 
     // response from server
