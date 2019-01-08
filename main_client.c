@@ -178,7 +178,8 @@ int main(void) {
 
     while(1) {
 
-	printf("\nSyntax menu options: \n1) search file\n2) download <file>\n3) upload <file>\n4) exit\nOption: ");
+	printf("\n-------------------------\n");
+	printf("Syntax menu options: \n1) search file\n2) download <file>\n3) upload <file>\n4) exit\nOption: ");
 	sprintf(buffer, " ");
 	fgets(buffer, 999, stdin); // user interts command
     	write(clisock, (void *)buffer, strlen(buffer)); // send command
@@ -234,16 +235,30 @@ int main(void) {
 	    if(strlen(buffer) == 1 && strncmp(buffer, "0", 1) == 0) {
 		printf("\nError in dowload, maybe wrong path!\n");
 		sprintf(buffer, "ok");
-	        write(clisock, (void *)buffer, strlen(buffer)); // send ok to server and exit while
+	        write(clisock, (void *)buffer, strlen(buffer)); // send ok to server
 	    }
 
 	    else {
 
-		printf("\nInsert name of file: ");
-		scanf("%s%*c", file_name);
-		printf("File will be saved in working directory\n");
+		printf("\n--> File will be saved in working directory\n\n");	
+		
+		while(1) {
 
-		// open file passed as argument
+		    printf("------------------------\n");
+		    printf("Insert name of file: ");
+		    scanf("%s%*c", file_name);		    
+
+		    // check if file already exist
+		    if((f = fopen(file_name, "r")) != NULL) {	    
+		        printf("Error, file already exist !! \n");	
+			fclose(f);	
+		    }
+
+		    else
+			break;
+		}		
+
+		// create and open file in writing
 		f = fopen(file_name, "w");
 		
 		if(f == NULL) {
@@ -276,7 +291,7 @@ int main(void) {
 	        }
 			
 		fclose(f);
-		printf("\nFile downloaded correctly\n");		
+		printf("\n--> File downloaded correctly\n");		
 
 	    }
 		
