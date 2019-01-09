@@ -20,10 +20,12 @@ int main(void) {
     char buffer[1000];
     int len;
     char file_name[256]; // file name
-    FILE *f; // file descriptor 
+    FILE *f = NULL; // file descriptor 
     char user[33];
     int integer = 0;
     int i;
+    int file; // file descriptor
+    int n;
 	
     clisock = socket(AF_INET, SOCK_STREAM, 0);
     if(clisock == -1) {
@@ -179,7 +181,7 @@ int main(void) {
     while(1) {
 
 	printf("\n-------------------------\n");
-	printf("Syntax menu options: \n1) search file\n2) download <file>\n3) upload <file>\n4) exit\nOption: ");
+	printf("Syntax menu options: \n1) search <file>\n2) download <file_path>\n3) upload <file_path>\n4) exit\nOption: ");
 	sprintf(buffer, " ");
 	fgets(buffer, 999, stdin); // user interts command
     	write(clisock, (void *)buffer, strlen(buffer)); // send command
@@ -256,7 +258,7 @@ int main(void) {
 
 		    else
 			break;
-		}		
+		}	
 
 		// create and open file in writing
 		f = fopen(file_name, "w");
@@ -295,6 +297,75 @@ int main(void) {
 
 	    }
 		
+	}
+
+	// upload function	
+	else if(strlen(buffer) > 8 && strncmp(buffer, "upload ", 7) == 0) {
+
+	    strcpy(file_name, &buffer[7]);
+	    file_name[strlen(file_name)-1] = '\0'; // delete carriage return
+
+	    // ok from server
+	    len = read(clisock, (void *)buffer, 1000);	
+	
+	    // open file
+	    file = open(file_name, O_RDONLY); 
+
+            // error in file opening --> sending 0 to indicate upload error
+            if(file == -1) {
+	        printf("\nError in file opening, maybe file doesn't exist\n");
+	        sprintf(buffer, "0");
+	        write(clisock, (void *)buffer, strlen(buffer));
+            }	
+
+	    else {
+
+		sprintf(buffer, "1");
+	        write(clisock, (void *)buffer, strlen(buffer));
+
+		len = read(clisock, (void *)buffer, 15); // ok from server
+
+		while(1) {
+		    printf("\n------------------------\n");
+		    printf("File sending, it will be saved in server in /home\nInsert name of file: ");
+		    scanf("%s%*c", buffer);
+		    write(clisock, (void *)buffer, strlen(buffer));
+			
+                    len = read(clisock, (void *)buffer, 15);
+
+		    // check if file name is ok by the server		   
+		    if(strncmp(buffer, "ok", 2) == 0)
+			break;
+		    else
+			printf("File name already exist in server in /home\n");		
+		}
+	
+		while (1) {
+
+    	            n = read(file, &buffer, 512);
+
+	            if(n>0) {
+	                write(clisock, (void *)buffer, n); // read from file
+	                // ok from server
+	                len = read(clisock, (void *)buffer, 15);
+	            }  
+
+	            else {
+	                // sending escape sequence to indicate to the server that the sending is finished
+                        sprintf(buffer, "escape_1234");
+                        write(clisock, (void *)buffer, strlen(buffer));
+                        // ok from server
+                        len = read(clisock, (void *)buffer, 15);
+	                break;
+	            }
+                }
+
+		printf("\nFile uploaded correctly\n");		
+
+	    } 
+
+	    close(file);		
+	
 	}
 
 	// invalid command

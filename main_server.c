@@ -38,6 +38,7 @@ void listpath(char *path);
 void *connection_thread(void *arg);
 void sendList(List lis, int sock, char *str);
 void download(char *str, int sock);
+void upload(int sock);
 
 // declaration of global variables
 List list;
@@ -231,6 +232,11 @@ void *connection_thread(void *arg) {
 	    download(str1, sock); 
 	}
 
+	// upload file relative to the path sent by the client
+	else if(len > 8 && strncmp(str1, "upload ", 7) == 0) {		
+	    upload(sock); 
+	}
+
 	// exit from while
 	else if(len == 5 && strncmp(str1, "exit", 4) == 0) 
 	    break;
@@ -245,6 +251,91 @@ void *connection_thread(void *arg) {
 
     printf("Client disconnected\n");
     close(sock); // closing of comunication socket   
+
+}
+
+// function that upload a file to the server
+void upload(int sock) {
+
+    char str_ok[16];
+    int len = 0;
+    char buffer[512];
+    char file_name[512] = "\0";
+    FILE *f = NULL;
+
+    sprintf(str_ok, "ok");
+    write(sock, (void *)str_ok, strlen(str_ok)); // send ok to client 
+
+    // receive status from client
+    len = read(sock, (void *)buffer, 512);
+    if(len > 0)
+	buffer[len]='\0';
+
+    // error in client file sending if client send 0
+    if(strlen(buffer) == 2 && strncmp(buffer, "0", 1) == 0) {
+	printf("Upload error\n");
+	return;
+    }   
+
+    sprintf(str_ok, "ok");
+    write(sock, (void *)str_ok, strlen(str_ok)); // send ok to client
+
+    while(1) {
+ 
+	len = read(sock, (void *)buffer, 512); 	// server receives name file from client
+        if(len > 0)
+	    buffer[len]='\0';
+
+        file_name[0] = '\0';
+        strcat(file_name, "/home/eusebio/Scrivania/");
+        strcat(file_name, buffer);
+
+	// file already exist
+	if((f = fopen(file_name, "r")) != NULL) {
+	    sprintf(str_ok, "0");
+    	    write(sock, (void *)str_ok, strlen(str_ok)); // send 0 to client as error
+	    fclose(f);
+	}
+
+	// file doesn't exist
+	else {
+	    sprintf(str_ok, "ok");
+    	    write(sock, (void *)str_ok, strlen(str_ok)); // send ok to client and exit while
+	    break;
+	}
+
+    }    
+
+    // create and open file in writing
+    f = fopen(file_name, "w");
+		
+    if(f == NULL) {
+	printf("\nError in name file\n");
+	close(sock);
+	pthread_exit(NULL);			
+    }
+
+    while(1) {
+
+	len = read(sock, (void *)buffer, 512);
+    	if(len > 0)
+            buffer[len] = '\0';
+
+        // check escape sequence
+	if(strncmp(buffer, "escape_1234", 11) == 0) {
+	    sprintf(buffer, "ok");
+	    write(sock, (void *)buffer, strlen(buffer)); // send ok to client and exit while
+	    break;
+	}
+
+        fprintf(f, "%s", buffer); // write on file
+	
+	sprintf(buffer, "ok");
+	write(sock, (void *)buffer, strlen(buffer)); // send ok to client	
+	
+    }
+
+    fclose(f);    
 
 }
 
