@@ -272,7 +272,7 @@ void upload(int sock) {
 	buffer[len]='\0';
 
     // error in client file sending if client send 0
-    if(strlen(buffer) == 2 && strncmp(buffer, "0", 1) == 0) {
+    if(strncmp(buffer, "0", 1) == 0) {
 	printf("Upload error\n");
 	return;
     }   

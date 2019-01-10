@@ -151,6 +151,7 @@ int main(void) {
     sprintf(buffer, "ok");
     write(clisock, (void *)buffer, strlen(buffer)); // send ok to server
 
+    printf("\n--- LIST OF FILE ---\n"); 
     print_file(clisock); // list of file_path from server
 
     while(1) {
@@ -171,33 +172,7 @@ int main(void) {
 	if(strlen(buffer) > 8 && strncmp(buffer, "search ", 7) == 0) {
 
 	    printf("\n--- SEARCH RESULTS ---\n");
-
-	    while(1) {
-
-	        len = read(clisock, (void *)buffer, 1000);
-    	        if(len > 0)
-                    buffer[len] = '\0';
-
-		// if server sends 0 --> no file found 
-		if(strncmp(buffer, "0", 1) == 0) {
-		    printf("No file found\n");
-		    sprintf(buffer, "ok");
-	            write(clisock, (void *)buffer, strlen(buffer)); // send ok to server and exit while
-		    break;
-		}
-
-	        // check escape sequence
-	        if(strncmp(buffer, "escape_1234", 11) == 0) {
-		    sprintf(buffer, "ok");
-	            write(clisock, (void *)buffer, strlen(buffer)); // send ok to server and exit while
-	            break;
-	        }
-	
-	        printf("%s\n", buffer);
-                sprintf(buffer, "ok");
-	        write(clisock, (void *)buffer, strlen(buffer)); // send ok to server
-
-	    }
+	    print_file(clisock);
 
         }
 
@@ -277,6 +252,7 @@ int main(void) {
 	// upload function	
 	else if(strlen(buffer) > 8 && strncmp(buffer, "upload ", 7) == 0) {
 
+	    file_name[0]= '\0';
 	    strcpy(file_name, &buffer[7]);
 	    file_name[strlen(file_name)-1] = '\0'; // delete carriage return
 
@@ -335,14 +311,14 @@ int main(void) {
 	            }
                 }
 
-		printf("\nFile uploaded correctly\n");		
+		printf("\nFile uploaded correctly\n");	
 
-	    } 
+	        // client receive new list with file uploaded
+		printf("\n--- LIST OF FILE ---\n"); 
+	        print_file(clisock);
+	        close(file);	
 
-	    // client receive new list with file uploaded
-	    print_file(clisock);
-
-	    close(file);		
+	    } 		
 	
 	}
 
@@ -363,8 +339,6 @@ void print_file(int clisock) {
 
     char buffer[1000];
     int len;
-	
-    printf("\n--- LIST OF FILE ---\n"); // server sends list of file 
 
     while(1) {
 
