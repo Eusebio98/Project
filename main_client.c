@@ -13,6 +13,8 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 
+void print_file(int clisock);
+
 int main(void) {
 
     int clisock; // socket id
@@ -149,34 +151,7 @@ int main(void) {
     sprintf(buffer, "ok");
     write(clisock, (void *)buffer, strlen(buffer)); // send ok to server
 
-    printf("\n--- LIST OF FILE ---\n"); // server sends list of file 
-
-    while(1) {
-
-	len = read(clisock, (void *)buffer, 1000);
-    	if(len > 0)
-            buffer[len] = '\0';
-
-	// if server sends 0 --> no file found
-        if(strncmp(buffer, "0", 1) == 0) {
-	    printf("No file found\n");
-	    sprintf(buffer, "ok");
-	    write(clisock, (void *)buffer, strlen(buffer)); // send ok to server and exit while
-	    break;
-	}
-
-	// check escape sequence
-	if(strncmp(buffer, "escape_1234", 11) == 0) {
-	    sprintf(buffer, "ok");
-	    write(clisock, (void *)buffer, strlen(buffer)); // send ok to server and exit while
-	    break;
-	}
-	
-	printf("%s\n", buffer);
-	sprintf(buffer, "ok");
-	write(clisock, (void *)buffer, strlen(buffer)); // send ok to server
-
-    }
+    print_file(clisock); // list of file_path from server
 
     while(1) {
 
@@ -365,32 +340,7 @@ int main(void) {
 	    } 
 
 	    // client receive new list with file uploaded
-	    while(1) {
-
-	        len = read(clisock, (void *)buffer, 1000);
-    	        if(len > 0)
-                    buffer[len] = '\0';
-
-	        // if server sends 0 --> no file found
-                if(strncmp(buffer, "0", 1) == 0) {
-	            printf("No file found\n");
-	            sprintf(buffer, "ok");
-	            write(clisock, (void *)buffer, strlen(buffer)); // send ok to server and exit while
-	            break;
-	        }
-
-	        // check escape sequence
-	        if(strncmp(buffer, "escape_1234", 11) == 0) {
-	            sprintf(buffer, "ok");
-	            write(clisock, (void *)buffer, strlen(buffer)); // send ok to server and exit while
-	            break;
-	        }
-	
-	        printf("%s\n", buffer);
-	        sprintf(buffer, "ok");
-	        write(clisock, (void *)buffer, strlen(buffer)); // send ok to server
-
-            }
+	    print_file(clisock);
 
 	    close(file);		
 	
@@ -405,5 +355,42 @@ int main(void) {
         }
 
     }
+
+}
+
+// funcion that allow to print from server the list of file_path of server's /home
+void print_file(int clisock) {
+
+    char buffer[1000];
+    int len;
+	
+    printf("\n--- LIST OF FILE ---\n"); // server sends list of file 
+
+    while(1) {
+
+	len = read(clisock, (void *)buffer, 1000);
+    	if(len > 0)
+            buffer[len] = '\0';
+
+	// if server sends 0 --> no file found
+        if(strncmp(buffer, "0", 1) == 0) {
+	    printf("No file found\n");
+	    sprintf(buffer, "ok");
+	    write(clisock, (void *)buffer, strlen(buffer)); // send ok to server and exit while
+	    break;
+	}
+
+	// check escape sequence
+	if(strncmp(buffer, "escape_1234", 11) == 0) {
+	    sprintf(buffer, "ok");
+	    write(clisock, (void *)buffer, strlen(buffer)); // send ok to server and exit while
+	    break;
+	}
+	
+	printf("%s\n", buffer);
+	sprintf(buffer, "ok");
+	write(clisock, (void *)buffer, strlen(buffer)); // send ok to server
+
+    }    	
 
 }
