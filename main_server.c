@@ -335,6 +335,11 @@ void upload(int sock) {
 	
     }
 
+    pthread_mutex_lock(&work_mutex);
+    listpath("/home/eusebio/Scrivania"); // listing of /home 
+    sendList(list, sock, "/home/eusebio/Scrivania"); // send the complete new list to the client
+    pthread_mutex_unlock(&work_mutex);
+
     fclose(f);    
 
 }
