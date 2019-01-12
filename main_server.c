@@ -75,7 +75,7 @@ int main(void) {
 	exit(EXIT_FAILURE);
     }
 
-    listpath("/home/eusebio/Scrivania"); // listing of /home 
+    listpath("/home"); // listing of /home 
     
     // now the global list contains all indexed files available from possible clients
 
@@ -209,7 +209,7 @@ void *connection_thread(void *arg) {
     }
 
     pthread_mutex_lock(&work_mutex);
-    sendList(list, sock, "/home/eusebio/Scrivania"); // send the complete list to the client
+    sendList(list, sock, "/home"); // send the complete list to the client
     pthread_mutex_unlock(&work_mutex);
 
     while(1) {
@@ -235,6 +235,13 @@ void *connection_thread(void *arg) {
 	// upload file relative to the path sent by the client
 	else if(len > 8 && strncmp(str1, "upload ", 7) == 0) {		
 	    upload(sock); 
+	}
+
+	// send list to the client
+	else if(len == 5 && strncmp(str1, "list", 4) == 0) {
+	    pthread_mutex_lock(&work_mutex);
+            sendList(list, sock, "/home"); // send the complete list to the client
+            pthread_mutex_unlock(&work_mutex);
 	}
 
 	// exit from while
@@ -287,7 +294,7 @@ void upload(int sock) {
 	    buffer[len]='\0';
 
         file_name[0] = '\0';
-        strcat(file_name, "/home/eusebio/Scrivania/");
+        strcat(file_name, "/home/");
         strcat(file_name, buffer);
 
 	// file already exist
@@ -308,6 +315,8 @@ void upload(int sock) {
 
     // create and open file in writing
     f = fopen(file_name, "w");
+
+    printf("%s", file_name);
 		
     if(f == NULL) {
 	printf("\nError in name file\n");
@@ -336,8 +345,8 @@ void upload(int sock) {
     }
 
     pthread_mutex_lock(&work_mutex);
-    listpath("/home/eusebio/Scrivania"); // listing of /home 
-    sendList(list, sock, "/home/eusebio/Scrivania"); // send the complete new list to the client
+    listpath("/home"); // listing of /home 
+    sendList(list, sock, "/home"); // send the complete new list to the client
     pthread_mutex_unlock(&work_mutex);
 
     fclose(f);    

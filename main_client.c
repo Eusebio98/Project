@@ -13,6 +13,8 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 
+#define SERVER_ADDRESS "127.0.0.1" // server IP address
+
 void print_file(int clisock);
 
 int main(void) {
@@ -37,7 +39,7 @@ int main(void) {
 	
     baddr.sin_family = AF_INET;
     baddr.sin_port = htons(7777);
-    baddr.sin_addr.s_addr = inet_addr("127.0.0.1");
+    baddr.sin_addr.s_addr = inet_addr(SERVER_ADDRESS);
 	
     // connect to the server
     if(connect(clisock, (struct sockaddr *)&baddr, sizeof(baddr)) == -1) {
@@ -157,7 +159,7 @@ int main(void) {
     while(1) {
 
 	printf("\n-------------------------\n");
-	printf("Syntax menu options: \n1) search <file>\n2) download <file_path>\n3) upload <file_path>\n4) exit\nOption: ");
+	printf("Syntax menu options: \n1) search <file>\n2) download <file_path>\n3) upload <file_path>\n4) list\n5) exit\nOption: ");
 	sprintf(buffer, " ");
 	fgets(buffer, 999, stdin); // user interts command
     	write(clisock, (void *)buffer, strlen(buffer)); // send command
@@ -321,6 +323,11 @@ int main(void) {
 	    } 		
 	
 	}
+	
+	else if(strlen(buffer) == 5 && strncmp(buffer, "list", 4) == 0) {
+	    printf("\n--- LIST OF FILE ---\n"); 
+	    print_file(clisock);   	
+	} 
 
 	// invalid command
 	else {
