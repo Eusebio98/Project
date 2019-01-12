@@ -1,4 +1,5 @@
 # ProjectSO
+
 Project Operating System 2018 - 2019
 
 L'applicazione implementa un servizio di file transfer tra macchine client e server nel dominio AF_INET di IPV4. Nel file "main_server.c" è implementato il lato server che effettua prima una indicizzazione dei file all'interno della home, sfruttando le funzioni svilppate nella consegna 1 del progetto (file "step1.c" all'interno della repository), e poi si comporta come server TCP accettando connessioni da client remot e fornendo il servizio di file transfer. 
@@ -23,9 +24,9 @@ Il client può così mandare una serie di comandi al server, il quale li elabore
 
 - FUNZIONE DI UPLOAD --> [sintassi: upload <file_path>] con cui il client immette un path_name relativo ad un file presente nell'elaboratore e ne richiede l'invio al server. Se il pathname risulta corretto, il file viene aperto e verrà richiesto al client con quale nome memorizzare il file sul server (il file viene memorizzato nella /home, per questo il sever necessita delle opportune autorizzazione tramite il comando sudo quando viene lanciato). Alla fine il server riceverà uno stream di dati e creerà un nuobo file come richiesto in /home, aggiornando successivamente la lista dei file disponibili e inviandola nuovamente al client come conferma dell'avvenuto caricamento.
 
-FUNZIONE DI LIST --> [sintassi: list] con cui il client richiede un nuovo invio dei file disponibili per le operazioni di search e download così come descritto sopra.
+- FUNZIONE DI LIST --> [sintassi: list] con cui il client richiede un nuovo invio dei file disponibili per le operazioni di search e download così come descritto sopra.
 
-FUNZIONE DI EXIT --> [sintassi: exit] con il quale il client chiude la connessione e termina la propria esecuzione.
+- FUNZIONE DI EXIT --> [sintassi: exit] con il quale il client chiude la connessione e termina la propria esecuzione.
 
 Altri comandi non sono accettati e se immessi verranno segnalati degli opportuni errori all'utente. Inoltre ogni volta che viene inserito un pathname nelle funzioni di download e upload, se questo non verrà riconosciuto o se il server riscontrerà dei problemi nell'invio o nella ricezione dei dati, degli opporuni errori verranno sengalati al client e se si tratta di fatal error, la connessione verrà abortita dal server, che chiudendo il socket di comunicazione si renderà disponibile per accettare altre connessioni da altri client.
 
