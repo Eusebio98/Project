@@ -97,7 +97,7 @@ int main(void) {
 
     printf("%s", buffer);
 
-    // file /home/user_pass.txt error in server
+    // file "/home/user_pass.txt" error in server
     if(strncmp("Impossible to open /home/user_pass.txt", buffer, 38) == 0) { 
         close(clisock);
 	exit(EXIT_FAILURE);
