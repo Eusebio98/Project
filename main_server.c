@@ -5,9 +5,6 @@
 /* IMPORTANT --> THIS PROGRAM MUST BE RUN WITH SUDO COMMAND BECAUSE ONLY SYSTEM ADMINISTRATOR CAN UPLOAD FILE IN /home
    OTHERWISE CLIENT WILL DETECT AN ERROR IN UPLOAD FUNCTION. */
 
-/* IMPORTANT --> CHECK THE EXISTENCE OF THE FILE /home/user_pass.txt WHICH CONTAINS THE LIST OF USERNAME AND PASSWORD OF
-  AUTHORIZED USERES WHO CAN ACCESS TO THE APPLICATION FUNCTIONS, OTHERWISE SERVER WILL NOT ACCEPT CONNECTIONS BY CLIENTS.  */
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <dirent.h>
@@ -85,6 +82,8 @@ int main(void) {
     
     // now the global list contains all indexed files available from possible clients
 
+    printf("\nServer is waiting for connection\n\n");
+
     while(1) {
 
 	// new connection
@@ -129,7 +128,7 @@ void *connection_thread(void *arg) {
 	password[len-1]='\0';
 
     FILE *f = NULL;
-    f = fopen("/home/user_pass.txt", "r+"); // open the file that contains the list of authorized usernames and their passwords
+    f = fopen("/home/user_pass.txt", "a+"); // open the file that contains the list of authorized usernames and their passwords
 
     if(f == NULL) {
         printf("Impossible to open /home/user_pass.txt\n"); // maybe the file doesn't exist!!
