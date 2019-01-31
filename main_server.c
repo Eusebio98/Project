@@ -214,10 +214,6 @@ void *connection_thread(void *arg) {
         pthread_exit(NULL);
     }
 
-    pthread_mutex_lock(&work_mutex);
-    sendList(list, sock, "/home"); // send the complete list to the client
-    pthread_mutex_unlock(&work_mutex);
-
     while(1) {
 
         len = read(sock, (void *)str1, 999);

@@ -47,6 +47,10 @@ int main(void) {
 	exit(EXIT_FAILURE);
     }
 
+    printf("\n\n-------------- FILE TRANSFER SOFTWARE --------------\n\n");
+    printf("--> If you are a registered user, enter username and password\n");
+    printf("--> If you are a new user and you want to register, enter username and password\n");
+
     len = read(clisock, (void *)buffer, 199);
     if(len > 0)
 	buffer[len] = '\0';
@@ -97,7 +101,7 @@ int main(void) {
 
     printf("%s", buffer);
 
-    // file "/home/user_pass.txt" error in server
+    // file /home/user_pass.txt error in server
     if(strncmp("Impossible to open /home/user_pass.txt", buffer, 38) == 0) { 
         close(clisock);
 	exit(EXIT_FAILURE);
@@ -152,9 +156,6 @@ int main(void) {
     // user logged in correctly
     sprintf(buffer, "ok");
     write(clisock, (void *)buffer, strlen(buffer)); // send ok to server
-
-    printf("\n--- LIST OF FILE ---\n"); 
-    print_file(clisock); // list of file_path from server
 
     while(1) {
 
